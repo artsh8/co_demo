@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+*.bkp
+*.png
+*.drawio
+Dockerfile
+client
+venv
+co_doc
+.git
+.gitignore
+README.md
+LICENCE.md

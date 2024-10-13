@@ -1,0 +1,121 @@
+version: '3'
+
+services:
+  co-gen:
+    build:
+      context: .
+      dockerfile: ./dummy_data/Dockerfile
+    depends_on:
+      pgpool:
+        condition: service_healthy
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+          cpus: '1.0'
+        reservations:
+          memory: 50M
+    # закоменнтировать команду после первого запуска, поскольку БД уже будет инициализирована
+    # command: >
+    #   sh -c "python -m server.initdb && gunicorn --bind 0.0.0.0:8082 server.wsgi:app"
+
+  co-api:
+    build:
+      context: .
+      dockerfile: ./endpoints/Dockerfile
+    depends_on: 
+      - pgpool
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '2.0'
+        reservations:
+          memory: 50M
+
+  nginx:
+    image: nginx
+    ports:
+      - 8080:81
+    volumes:
+      - ./nginx-router.conf:/etc/nginx/nginx.conf:ro
+      - ./index.html:/var/www/index.html:ro
+    depends_on:
+      - co-gen
+      - co-api
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '2.0'
+        reservations:
+          memory: 50M
+
+# Copyright Broadcom, Inc. All Rights Reserved.
+# SPDX-License-Identifier: APACHE-2.0
+  pg-0:
+    image: docker.io/bitnami/postgresql-repmgr:14
+    ports:
+      - 5432
+    volumes:
+      - pg_0_data:/bitnami/postgresql
+    environment:
+      - POSTGRESQL_POSTGRES_PASSWORD=adminpassword
+      - POSTGRESQL_USERNAME=customuser
+      - POSTGRESQL_PASSWORD=custompassword
+      - POSTGRESQL_DATABASE=co # changed from original name
+      - POSTGRESQL_NUM_SYNCHRONOUS_REPLICAS=1
+      - REPMGR_PRIMARY_HOST=pg-0
+      - REPMGR_PARTNER_NODES=pg-1,pg-0
+      - REPMGR_NODE_NAME=pg-0
+      - REPMGR_NODE_NETWORK_NAME=pg-0
+      - REPMGR_USERNAME=repmgr
+      - REPMGR_PASSWORD=repmgrpassword
+  pg-1:
+    image: docker.io/bitnami/postgresql-repmgr:14
+    ports:
+      - 5432
+    volumes:
+      - pg_1_data:/bitnami/postgresql
+    environment:
+      - POSTGRESQL_POSTGRES_PASSWORD=adminpassword
+      - POSTGRESQL_USERNAME=customuser
+      - POSTGRESQL_PASSWORD=custompassword
+      - POSTGRESQL_DATABASE=co # changed from original name
+      - POSTGRESQL_NUM_SYNCHRONOUS_REPLICAS=1
+      - REPMGR_PRIMARY_HOST=pg-0
+      - REPMGR_PARTNER_NODES=pg-0,pg-1
+      - REPMGR_NODE_NAME=pg-1
+      - REPMGR_NODE_NETWORK_NAME=pg-1
+      - REPMGR_USERNAME=repmgr
+      - REPMGR_PASSWORD=repmgrpassword
+  pgpool:
+    image: docker.io/bitnami/pgpool:4
+    ports:
+      - 5432:5432
+    environment:
+      # - PGPOOL_BACKEND_NODES=0:pg-0:5432,1:pg-1:5432
+      - PGPOOL_BACKEND_NODES=0:pg-0:5432:2:,1:pg-1:5432:1 # added weights
+      - PGPOOL_SR_CHECK_USER=repmgr
+      - PGPOOL_SR_CHECK_PASSWORD=repmgrpassword
+      - PGPOOL_ENABLE_LDAP=no
+      - PGPOOL_POSTGRES_USERNAME=postgres
+      - PGPOOL_POSTGRES_PASSWORD=adminpassword
+      - PGPOOL_ADMIN_USERNAME=admin
+      - PGPOOL_ADMIN_PASSWORD=adminpassword
+      - PGPOOL_ENABLE_LOAD_BALANCING=yes
+      - PGPOOL_POSTGRES_CUSTOM_USERS=customuser
+      - PGPOOL_POSTGRES_CUSTOM_PASSWORDS=custompassword
+    healthcheck:
+      test: ["CMD", "/opt/bitnami/scripts/pgpool/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+volumes:
+  pg_0_data:
+    driver: local
+  pg_1_data:
+    driver: local
