@@ -4,7 +4,7 @@
 
 Для запуска необходимо выполнить команду:
 
-```docker-compose up -d --build```
+```docker-compose up -d```
 
 Общая схема взаимодействия сервисов в проекте:
 ![diagram](diagram.png)

@@ -2,15 +2,22 @@ version: '3'
 
 services:
   co-gen:
-    build:
-      context: .
-      dockerfile: ./dummy_data/Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: ./dummy_data/Dockerfile
+    image: artsh8/co-gen
     depends_on:
       pgpool:
         condition: service_healthy
+    environment:
+      - PG_DBNAME=co
+      - PG_USER=customuser
+      - PG_PASSWORD=custompassword
+      - PG_HOST=pgpool
+      - PG_PORT=5432
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
       resources:
         limits:
           memory: 256M
@@ -18,15 +25,22 @@ services:
         reservations:
           memory: 50M
     # закоменнтировать команду после первого запуска, поскольку БД уже будет инициализирована
-    # command: >
-    #   sh -c "python -m server.initdb && gunicorn --bind 0.0.0.0:8082 server.wsgi:app"
+    command: >
+      sh -c "python -m server.initdb && gunicorn --bind 0.0.0.0:8082 server.wsgi:app"
 
   co-api:
-    build:
-      context: .
-      dockerfile: ./endpoints/Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: ./endpoints/Dockerfile
+    image: artsh8/co-api
     depends_on: 
       - pgpool
+    environment:
+      - PG_DBNAME=co
+      - PG_USER=customuser
+      - PG_PASSWORD=custompassword
+      - PG_HOST=pgpool
+      - PG_PORT=5432
     deploy:
       resources:
         limits:

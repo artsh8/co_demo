@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -17,9 +18,11 @@ import (
 const defaultLimit = 10
 const defaultOffset = 0
 
+var bdstr string = fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable", os.Getenv("PG_USER"), os.Getenv("PG_PASSWORD"), os.Getenv("PG_DBNAME"), os.Getenv("PG_HOST"), os.Getenv("PG_PORT"))
+
 // Создать соединение с БД
 func connectDB() (*sql.DB, error) {
-	connStr := "user=customuser password=custompassword dbname=co host=pgpool port=5432 sslmode=disable"
+	connStr := bdstr
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		fmt.Println(err)

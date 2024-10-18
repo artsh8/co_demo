@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 from flask import Flask, jsonify, request
 import psycopg2
@@ -10,11 +11,11 @@ fake = Faker()
 stats = {"maxCustomer": 1, "maxMerchant": 1, "maxCo": 1, "maxProduct": 1}
 stats_updates = 0
 db_params = {
-    "dbname": "co",
-    "user": "customuser",
-    "password": "custompassword",
-    "host": "pgpool",
-    "port": "5432",
+    "dbname": os.getenv('PG_DBNAME'),
+    "user": os.getenv('PG_USER'),
+    "password": os.getenv('PG_PASSWORD'),
+    "host": os.getenv('PG_HOST'),
+    "port": os.getenv('PG_PORT'),
 }
 
 
