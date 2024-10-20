@@ -49,7 +49,7 @@ async def add_data() -> httpx.Response:
     return await post_data("http://localhost:8080/gen/v1/dummy-data", data)
 
 
-async def get_stats() -> dict:
+async def get_stats() -> httpx.Response:
     return await fetch_data("http://localhost:8080/gen/v1/stats")
 
 

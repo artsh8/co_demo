@@ -159,7 +159,7 @@ def is_valid(json: dict) -> bool:
 
 
 def add_dummy(data: dict) -> tuple[list, list]:
-    added = []
+    added: list[str] = []
     errors = []
     for key, value in data.items():
         match key:
